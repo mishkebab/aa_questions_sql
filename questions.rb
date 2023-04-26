@@ -56,6 +56,12 @@ class User
     def authored_questions
         return Question.find_by_author_id(@id)
     end
+
+    def authored_replies
+        return Reply.find_by_user_id(@id)
+    end
+
+
 end 
 
 class Question
@@ -128,6 +134,15 @@ class Question
         
     end
 
+    def author 
+       return User.find_by_id(@author_id)
+    end
+
+    def replies 
+        return Reply.find_by_question_id(@id)
+    end
+
+
 end
 
 class QuestionFollows 
@@ -188,6 +203,19 @@ class Reply
 
         Reply.new(question_id.first)
     end
+    def self.find_by_parent_id(parent_id)
+        parent_reply = QuestionsDatabase.instance.execute(<<-SQL, parent_id)
+            SELECT
+                *
+            FROM
+                replies
+            WHERE
+                parent_reply_id = ?
+        SQL
+        return nil unless parent_reply.length > 0
+
+        Reply.new(parent_reply.first)
+    end
 
     def self.all 
         data =QuestionsDatabase.instance.execute("SELECT * from replies")
@@ -207,6 +235,27 @@ class Reply
 
         Reply.new(id.first)
     end
+
+    def author 
+        User.find_by_id(@author_id)
+    end
+
+    def question 
+        Question.find_by_id(@question_id)
+    end
+
+    def parent_reply
+        return Reply.find_by_id(@parent_reply_id)
+    end
+
+    def child_replies
+        if parent_reply_id.nil?
+            return Reply.find_by_parent_id(@id)
+        end
+
+    end
+
+
     attr_accessor :id, :question_id, :parent_reply_id, :author_id,:body
     def initialize(options)
         @id = options['id']
