@@ -13,7 +13,7 @@ end
 
 class User 
     attr_accessor :id, :fname, :lname
-    
+
     def self.all
         data = QuestionsDatabase.instance.execute("SELECT * from users")
         data.map {|row| User.new(row)}
@@ -141,3 +141,59 @@ class QuestionFollows
     end
 
 end
+
+class Reply
+    def self.all 
+        data =QuestionsDatabase.instance.execute("SELECT * from replies")
+        data.map {|row| Reply.new(row)}
+    end
+
+    def self.find_by_id(id)
+        id = QuestionsDatabase.instance.execute(<<-SQL, id)
+            SELECT
+                *
+            FROM
+                replies
+            WHERE
+                id = ?
+        SQL
+        return nil unless id.length > 0
+
+        Reply.new(id.first)
+    end
+
+    def initialize(options)
+        @id = options['id']
+        @question_id = options['question_id']
+        @parent_reply_id = options['parent_reply_id']
+        @author_id = options['author_id']
+        @body = options['body']
+    end
+end 
+
+class QuestionLikes
+    def self.all 
+        data =QuestionsDatabase.instance.execute("SELECT * from question_likes")
+        data.map {|row| QuestionLikes.new(row)}
+    end
+
+    def self.find_by_id(id)
+        id = QuestionsDatabase.instance.execute(<<-SQL, id)
+            SELECT
+                *
+            FROM
+                question_likes
+            WHERE
+                id = ?
+        SQL
+        return nil unless id.length > 0
+
+        QuestionLikes.new(id.first)
+    end
+
+    def initialize(options)
+        @id = options['id']
+        @question_id = options['question_id']
+        @user_id = options['user_id']
+    end
+end 
