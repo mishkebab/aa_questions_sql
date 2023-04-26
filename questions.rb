@@ -101,7 +101,7 @@ class Question
         return nil unless body.length > 0
         Question.new(body.first)
     end
-
+    attr_accessor :id, :title, :body, :author_id
     def initialize(options)
         @id = options['id']
         @title = options['title']
@@ -133,7 +133,7 @@ class QuestionFollows
         QuestionFollows.new(id.first)
     end
 
-
+    attr_accessor :id, :user_id, :question_id
     def initialize(options)
         @id = options['id']
         @user_id = options['user_id']
@@ -161,7 +161,7 @@ class Reply
 
         Reply.new(id.first)
     end
-
+    attr_accessor :id, :question_id, :parent_reply_id, :author_id,:body
     def initialize(options)
         @id = options['id']
         @question_id = options['question_id']
@@ -191,9 +191,39 @@ class QuestionLikes
         QuestionLikes.new(id.first)
     end
 
+    attr_accessor :id, :question_id, :user_id
     def initialize(options)
         @id = options['id']
         @question_id = options['question_id']
         @user_id = options['user_id']
     end
 end 
+
+class Tag
+
+    def self.all 
+        data = QuestionsDatabase.instance.execute("SELECT * FROM tags")
+        data.map {|row| Tag.new(row)}
+    end
+
+    def self.find_by_id(id)
+        id =  QuestionsDatabase.instance.execute(<<-SQL,id)
+            SELECT 
+                *
+            FROM
+                tags 
+            WHERE
+                id = ? 
+        SQL
+        return nil unless id.length > 0 
+        Tag.new(id.first)
+    end
+
+    attr_accessor :id, :question_id, :tag_id
+    def initialize(options)
+        @id = options['id']
+        @question_id = options['question_id']
+        @tag_id = options['tag_id']
+    end
+
+end
