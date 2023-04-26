@@ -52,9 +52,27 @@ class User
         @fname = options['fname']
         @lname = options['lname']
     end 
+
+    def authored_questions
+        return Question.find_by_author_id(@id)
+    end
 end 
 
 class Question
+    def self.find_by_author_id(author_id)
+        author_id = QuestionsDatabase.instance.execute(<<-SQL, author_id)
+            SELECT
+                *
+            FROM
+                questions
+            WHERE
+                author_id = ?
+        SQL
+        return nil unless author_id.length > 0
+
+        Question.new(author_id.first)
+    end 
+
     def self.all
         data = QuestionsDatabase.instance.execute("SELECT * from questions")
         data.map {|row| Question.new(row)}
@@ -143,6 +161,34 @@ class QuestionFollows
 end
 
 class Reply
+    def self.find_by_user_id(user_id)
+        user_id = QuestionsDatabase.instance.execute(<<-SQL, user_id)
+            SELECT
+                *
+            FROM
+                replies
+            WHERE
+                user_id = ?
+        SQL
+        return nil unless user_id.length > 0
+
+        Reply.new(user_id.first)
+    end
+
+    def self.find_by_question_id(question_id)
+        question_id = QuestionsDatabase.instance.execute(<<-SQL, question_id)
+            SELECT
+                *
+            FROM
+                replies
+            WHERE
+                question_id = ?
+        SQL
+        return nil unless question_id.length > 0
+
+        Reply.new(question_id.first)
+    end
+
     def self.all 
         data =QuestionsDatabase.instance.execute("SELECT * from replies")
         data.map {|row| Reply.new(row)}
