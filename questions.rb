@@ -61,10 +61,16 @@ class User
         return Reply.find_by_user_id(@id)
     end
 
-
+    def followed_questions
+        return QuestionFollows.followed_questions_for_user_id(@id)
+    end 
 end 
 
 class Question
+    def self.most_followed(n=1)
+        return QuestionFollows.most_followed_questions(n)
+    end 
+
     def self.find_by_author_id(author_id)
         author_id = QuestionsDatabase.instance.execute(<<-SQL, author_id)
             SELECT
@@ -142,10 +148,62 @@ class Question
         return Reply.find_by_question_id(@id)
     end
 
+    def followers
+        return QuestionFollows.followers_for_question_id(@id)
+    end 
 
 end
 
 class QuestionFollows 
+
+    def self.most_followed_questions(n)
+        followers = QuestionsDatabase.instance.execute(<<-SQL, n)
+        SELECT
+            questions.*
+        FROM
+            question_follows
+        RIGHT JOIN
+            questions on questions.id = question_follows.question_id
+        GROUP BY 
+            questions.id
+        ORDER BY 
+            COUNT(question_follows.user_id) DESC
+        LIMIT 
+            ?
+        SQL
+
+        followers.map {|question| Question.new(question)}
+    end
+
+    def self.followers_for_question_id(question_id)
+        followers = QuestionsDatabase.instance.execute(<<-SQL, question_id)
+        SELECT
+            users.*
+        FROM
+            question_follows
+        JOIN
+            users on users.id = question_follows.user_id
+        WHERE
+            question_follows.question_id = ? 
+        SQL
+
+        followers.map {|user| User.new(user)}
+    end
+
+    def self.followed_questions_for_user_id(user_id)
+        questions = QuestionsDatabase.instance.execute(<<-SQL, user_id)
+        SELECT
+            questions.*
+        FROM
+            question_follows
+        JOIN
+            questions on questions.id = question_follows.question_id
+        WHERE
+            question_follows.user_id = ? 
+        SQL
+
+        questions.map {|question| Question.new(question)}
+    end 
 
     def self.all 
         data =QuestionsDatabase.instance.execute("SELECT * from question_follows")
@@ -267,6 +325,35 @@ class Reply
 end 
 
 class QuestionLikes
+    
+    def self.likers_for_question_id(question_id)
+        likers = QuestionsDatabase.instance.execute(<<-SQL, question_id)
+            SELECT
+                users.*
+            FROM
+                question_likes
+            JOIN
+                users on users.id = question_likes.user_id
+            WHERE
+                question_likes.question_id = ?
+        SQL
+
+        likers.map {|user| User.new(user)}
+    end 
+
+    def self.num_likes_for_question_id(question_id)
+        count_of_likes = QuestionsDatabase.instance.execute(<<-SQL, question_id)
+        SELECT
+            COUNT(*)
+        FROM
+            question_likes
+        WHERE
+            question_likes.question_id = ?
+        SQL
+
+        count_of_likes.first.values
+    end 
+
     def self.all 
         data =QuestionsDatabase.instance.execute("SELECT * from question_likes")
         data.map {|row| QuestionLikes.new(row)}
